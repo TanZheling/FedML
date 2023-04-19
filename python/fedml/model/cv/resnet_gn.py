@@ -2,6 +2,7 @@ import math
 
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
+import torch
 
 __all__ = ["ResNet", "resnet18", "resnet34", "resnet50", "resnet101", "resnet152"]
 
@@ -124,7 +125,8 @@ class ResNet(nn.Module):
             block, 512, layers[3], stride=2, group_norm=group_norm
         )
         # self.avgpool = nn.AvgPool2d(7, stride=1)
-        self.avgpool = nn.AvgPool2d(1)
+        # self.avgpool = nn.AvgPool2d(1)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
         for m in self.modules():
@@ -167,31 +169,37 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        # print(x.shape)
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
-
+        # print(x.shape)
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-
+        # print(x.shape)
         x = self.avgpool(x)
+        # print(x.shape)
         x = x.view(x.size(0), -1)
+
+        # print(x.shape)
         x = self.fc(x)
 
         return x
 
 
-def resnet18(pretrained=False, **kwargs):
+def resnet18(class_num, pretrained=True, **kwargs):
     """Constructs a ResNet-18 model.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
+    model = ResNet(BasicBlock, [2, 2, 2, 2],num_classes=class_num, **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls["resnet18"]))
+        # model.load_state_dict(model_zoo.load_url(model_urls["resnet18"]))
+        pretrained_dict = torch.load('/home/dqwang/scratch/zlt/lemil/ckpt/r18_imgpre.pth')['state_dict']
+        model.load_state_dict(pretrained_dict,strict=False)
     return model
 
 

@@ -9,6 +9,7 @@ import torch
 from .stackoverflow_lr.data_loader import load_partition_data_federated_stackoverflow_lr
 from .FederatedEMNIST.data_loader import load_partition_data_federated_emnist
 from .ImageNet.data_loader import load_partition_data_ImageNet
+from .CRCK.data_loader import load_partition_data_CRCK
 from .Landmarks.data_loader import load_partition_data_landmarks
 from .MNIST.data_loader import load_partition_data_mnist, download_mnist
 from .cifar10.data_loader import load_partition_data_cifar10
@@ -390,6 +391,31 @@ def load_synthetic_data(args):
             partition_alpha=None,
             client_number=args.client_num_in_total,
             batch_size=args.batch_size,
+        )
+
+    elif dataset_name == "CRCK":
+        logging.info("load_data. dataset_name = %s" % dataset_name)
+        (
+            train_data_num,
+            test_data_num,
+            train_data_global,
+            test_data_global,
+            train_data_local_num_dict,
+            train_data_local_dict,
+            test_data_local_dict,
+            class_num,
+        ) = load_partition_data_CRCK(
+            dataset=dataset_name,
+            data_dir=args.data_cache_dir,
+            trainset=args.trainset,
+            testset=args.testset,
+            client_anno=args.client_anno,
+            train_anno=args.train_anno,
+            test_anno=args.test_anno,
+            task=args.task,
+            client_number=args.client_num_in_total,
+            batch_size=args.batch_size,
+            noise_num = args.noise_num
         )
 
     elif dataset_name == "gld23k":

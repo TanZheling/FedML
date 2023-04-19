@@ -185,6 +185,8 @@ def load_arguments(training_type=None, comm_backend=None):
     # or ~user in the given path to user’s home directory.
     if hasattr(args, "data_cache_dir"):
         args.data_cache_dir = os.path.expanduser(args.data_cache_dir)
+    # if hasattr(args, "data_client_dir"):
+    #     args.data_client_dir = os.path.expanduser(args.data_client_dir)
     if hasattr(args, "data_file_path"):
         args.data_file_path = os.path.expanduser(args.data_file_path)
     if hasattr(args, "partition_file_path"):

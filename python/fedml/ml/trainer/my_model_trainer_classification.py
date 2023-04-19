@@ -6,7 +6,8 @@ from ...core.dp.fedml_differential_privacy import FedMLDifferentialPrivacy
 import logging
 import copy
 import logging
-
+from collections import Counter, defaultdict
+from sklearn.metrics import roc_auc_score
 
 # from functorch import grad_and_value, make_functional, vmap
 
@@ -141,23 +142,54 @@ class ModelTrainerCLS(ClientTrainer):
 
         model.to(device)
         model.eval()
-
-        metrics = {"test_correct": 0, "test_loss": 0, "test_total": 0}
-
         criterion = nn.CrossEntropyLoss().to(device)
+        if args.dataset == 'CRCK':
+            bag={}
+            bag_label={}
+            bag_score={}
+            bag_pred_dict = defaultdict(list)
+            bag_results=[]
+            # metrics = {"auc": 0, "test_loss": 0}
+            with torch.no_grad():
+                for batch_idx, (x, target, bagname) in enumerate(test_data):
+                    x = x.to(device)
+                    target = target.to(device)
+                    pred = model(x)
+                    target = target.long()
+                    loss = criterion(pred, target)  # pylint: disable=E1102
+                    for j in range(len(bagname)):
+                        if bagname[j] not in bag:
+                            bag[bagname[j]]=0
+                            bag_label[bagname[j]]=int(target[j])
+                            bag_score[bagname[j]]=0
+                        bag_score[bagname[j]]+=pred[j][0]
+                        bag[bagname[j]]+=1
 
-        with torch.no_grad():
-            for batch_idx, (x, target) in enumerate(test_data):
-                x = x.to(device)
-                target = target.to(device)
-                pred = model(x)
-                target = target.long()
-                loss = criterion(pred, target)  # pylint: disable=E1102
+                for b in bag_score.keys():
+                    mean_0 = bag_score[b] / bag[b]
+                    bag_pred_dict[b]=[mean_0, 1 - mean_0]
+                bag_results = [kv[1][1].cpu() for kv in sorted(bag_pred_dict.items(), key=lambda x: x[0])]
+                bag_labels = [kv[1] for kv in sorted(bag_label.items(), key=lambda x: x[0])]
+                aucs = roc_auc_score(bag_labels,bag_results)
+            metrics = {"auc":aucs}
+            
+        else:
+            metrics = {"test_correct": 0, "test_loss": 0, "test_total": 0}
 
-                _, predicted = torch.max(pred, -1)
-                correct = predicted.eq(target).sum()
+            # criterion = nn.CrossEntropyLoss().to(device)
 
-                metrics["test_correct"] += correct.item()
-                metrics["test_loss"] += loss.item() * target.size(0)
-                metrics["test_total"] += target.size(0)
+            with torch.no_grad():
+                for batch_idx, (x, target) in enumerate(test_data):
+                    x = x.to(device)
+                    target = target.to(device)
+                    pred = model(x)
+                    target = target.long()
+                    loss = criterion(pred, target)  # pylint: disable=E1102
+
+                    _, predicted = torch.max(pred, -1)
+                    correct = predicted.eq(target).sum()
+
+                    metrics["test_correct"] += correct.item()
+                    metrics["test_loss"] += loss.item() * target.size(0)
+                    metrics["test_total"] += target.size(0)
         return metrics

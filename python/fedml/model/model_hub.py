@@ -57,6 +57,8 @@ def create(args, output_dim):
             model = (client_model, server_model)
         else:
             model = resnet56(class_num=output_dim)
+    elif model_name == "resnet18":
+        model = resnet18(class_num=output_dim)
     elif model_name == "mobilenet":
         model = mobilenet(class_num=output_dim)
     elif model_name == "mobilenet_v3":

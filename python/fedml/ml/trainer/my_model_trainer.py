@@ -3,7 +3,8 @@ from torch import nn
 
 from ...core.alg_frame.client_trainer import ClientTrainer
 import logging
-
+from collections import Counter, defaultdict
+from sklearn.metrics import roc_auc_score
 
 class MyModelTrainer(ClientTrainer):
 

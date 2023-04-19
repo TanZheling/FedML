@@ -150,10 +150,14 @@ class FedProxTrainer(object):
     def _local_test_on_all_clients(self, round_idx):
 
         logging.info("################local_test_on_all_clients : {}".format(round_idx))
+        if self.args.dataset == 'CRCK':
+            train_metrics = {"auc": []}
 
-        train_metrics = {"num_samples": [], "num_correct": [], "losses": []}
+            test_metrics = {"auc": []}
+        else:
+            train_metrics = {"num_samples": [], "num_correct": [], "losses": []}
 
-        test_metrics = {"num_samples": [], "num_correct": [], "losses": []}
+            test_metrics = {"num_samples": [], "num_correct": [], "losses": []}
 
         client = self.client_list[0]
 
@@ -170,43 +174,92 @@ class FedProxTrainer(object):
                 self.test_data_local_dict[client_idx],
                 self.train_data_local_num_dict[client_idx],
             )
-            # train data
-            train_local_metrics = client.local_test(False)
-            train_metrics["num_samples"].append(copy.deepcopy(train_local_metrics["test_total"]))
-            train_metrics["num_correct"].append(copy.deepcopy(train_local_metrics["test_correct"]))
-            train_metrics["losses"].append(copy.deepcopy(train_local_metrics["test_loss"]))
+            if self.args.dataset == 'CRCK':
+                # train data
+                # train_local_metrics = client.local_test(False)
+                # train_metrics["auc"].append(copy.deepcopy(train_local_metrics["auc"]))
 
-            # test data
-            test_local_metrics = client.local_test(True)
-            test_metrics["num_samples"].append(copy.deepcopy(test_local_metrics["test_total"]))
-            test_metrics["num_correct"].append(copy.deepcopy(test_local_metrics["test_correct"]))
-            test_metrics["losses"].append(copy.deepcopy(test_local_metrics["test_loss"]))
+                # test data
+                test_local_metrics = client.local_test(True)
+                test_metrics["auc"].append(copy.deepcopy(test_local_metrics["auc"]))
+                print(test_metrics["auc"])
 
-        # test on training dataset
-        train_acc = sum(train_metrics["num_correct"]) / sum(train_metrics["num_samples"])
-        train_loss = sum(train_metrics["losses"]) / sum(train_metrics["num_samples"])
+            else:
+                # train data
+                # train_local_metrics = client.local_test(False)
+                # train_metrics["num_samples"].append(copy.deepcopy(train_local_metrics["test_total"]))
+                # train_metrics["num_correct"].append(copy.deepcopy(train_local_metrics["test_correct"]))
+                # train_metrics["losses"].append(copy.deepcopy(train_local_metrics["test_loss"]))
 
-        # test on test dataset
-        test_acc = sum(test_metrics["num_correct"]) / sum(test_metrics["num_samples"])
-        test_loss = sum(test_metrics["losses"]) / sum(test_metrics["num_samples"])
+                # test data
+                test_local_metrics = client.local_test(True)
+                test_metrics["num_samples"].append(copy.deepcopy(test_local_metrics["test_total"]))
+                test_metrics["num_correct"].append(copy.deepcopy(test_local_metrics["test_correct"]))
+                test_metrics["losses"].append(copy.deepcopy(test_local_metrics["test_loss"]))
+        if self.args.dataset == 'CRCK':
+            # mean_train_auc = sum(train_metrics["auc"]) / self.args.client_num_in_total
+            mean_test_auc = sum(test_metrics["auc"]) / self.args.client_num_in_total
+            # stats = {"training_auc_mean": mean_auc, "training_auc_0":train_metrics["auc"][0],
+            #         "training_auc_1":train_metrics["auc"][1], "training_auc_2":train_metrics["auc"][2],
+            #         "training_auc_3":train_metrics["auc"][3], "training_auc_4":train_metrics["auc"][4]}
+            # if self.args.enable_wandb:
+            #     wandb.log({"Train/Auc_mean": mean_auc, "round": round_idx})
+            #     wandb.log({"Train/Auc_0": train_metrics["auc"][0], "round": round_idx})
+            #     wandb.log({"Train/Auc_1": train_metrics["auc"][1], "round": round_idx})
+            #     wandb.log({"Train/Auc_2": train_metrics["auc"][2], "round": round_idx})
+            #     wandb.log({"Train/Auc_3": train_metrics["auc"][3], "round": round_idx})
+            #     wandb.log({"Train/Auc_4": train_metrics["auc"][4], "round": round_idx})
+            # mlops.log({"Train/Auc_mean": mean_auc, "round": round_idx})
+            # mlops.log({"Train/Auc_0": train_metrics["auc"][0], "round": round_idx})
+            # mlops.log({"Train/Auc_1": train_metrics["auc"][1], "round": round_idx})
+            # mlops.log({"Train/Auc_2": train_metrics["auc"][2], "round": round_idx})
+            # mlops.log({"Train/Auc_3": train_metrics["auc"][3], "round": round_idx})
+            # mlops.log({"Train/Auc_4": train_metrics["auc"][4], "round": round_idx})
+            # logging.info(stats)
+            stats = {"testing_auc": mean_test_auc}
+            # , "testing_auc_0":test_metrics["auc"][0],
+            # "testing_auc_1":test_metrics["auc"][1], "testing_auc_2":test_metrics["auc"][2],
+            # "testing_auc_3":test_metrics["auc"][3], "testing_auc_4":test_metrics["auc"][4]}
+            if self.args.enable_wandb:
+                wandb.log({"Test/Auc": mean_test_auc, "round": round_idx})
+                # wandb.log({"Test/Auc_0": test_metrics["auc"][0], "round": round_idx})
+                # wandb.log({"Test/Auc_1": test_metrics["auc"][1], "round": round_idx})
+                # wandb.log({"Test/Auc_2": test_metrics["auc"][2], "round": round_idx})
+                # wandb.log({"Test/Auc_3": test_metrics["auc"][3], "round": round_idx})
+                # wandb.log({"Test/Auc_4": test_metrics["auc"][4], "round": round_idx})
+            mlops.log({"Test/Auc_mean": mean_test_auc, "round": round_idx})
+            # mlops.log({"Test/Auc_0": test_metrics["auc"][0], "round": round_idx})
+            # mlops.log({"Test/Auc_1": test_metrics["auc"][1], "round": round_idx})
+            # mlops.log({"Test/Auc_2": test_metrics["auc"][2], "round": round_idx})
+            # mlops.log({"Test/Auc_3": test_metrics["auc"][3], "round": round_idx})
+            # mlops.log({"Test/Auc_4": test_metrics["auc"][4], "round": round_idx})
+            logging.info(stats)
+        else:
+            # test on training dataset
+            train_acc = sum(train_metrics["num_correct"]) / sum(train_metrics["num_samples"])
+            train_loss = sum(train_metrics["losses"]) / sum(train_metrics["num_samples"])
 
-        stats = {"training_acc": train_acc, "training_loss": train_loss}
-        if self.args.enable_wandb:
-            wandb.log({"Train/Acc": train_acc, "round": round_idx})
-            wandb.log({"Train/Loss": train_loss, "round": round_idx})
+            # test on test dataset
+            test_acc = sum(test_metrics["num_correct"]) / sum(test_metrics["num_samples"])
+            test_loss = sum(test_metrics["losses"]) / sum(test_metrics["num_samples"])
 
-        mlops.log({"Train/Acc": train_acc, "round": round_idx})
-        mlops.log({"Train/Loss": train_loss, "round": round_idx})
-        logging.info(stats)
+            stats = {"training_acc": train_acc, "training_loss": train_loss}
+            if self.args.enable_wandb:
+                wandb.log({"Train/Acc": train_acc, "round": round_idx})
+                wandb.log({"Train/Loss": train_loss, "round": round_idx})
 
-        stats = {"test_acc": test_acc, "test_loss": test_loss}
-        if self.args.enable_wandb:
-            wandb.log({"Test/Acc": test_acc, "round": round_idx})
-            wandb.log({"Test/Loss": test_loss, "round": round_idx})
+            mlops.log({"Train/Acc": train_acc, "round": round_idx})
+            mlops.log({"Train/Loss": train_loss, "round": round_idx})
+            logging.info(stats)
 
-        mlops.log({"Test/Acc": test_acc, "round": round_idx})
-        mlops.log({"Test/Loss": test_loss, "round": round_idx})
-        logging.info(stats)
+            stats = {"test_acc": test_acc, "test_loss": test_loss}
+            if self.args.enable_wandb:
+                wandb.log({"Test/Acc": test_acc, "round": round_idx})
+                wandb.log({"Test/Loss": test_loss, "round": round_idx})
+
+            mlops.log({"Test/Acc": test_acc, "round": round_idx})
+            mlops.log({"Test/Loss": test_loss, "round": round_idx})
+            logging.info(stats)
 
     def _local_test_on_validation_set(self, round_idx):
 

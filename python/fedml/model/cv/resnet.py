@@ -254,6 +254,8 @@ class ResNet(nn.Module):
             return x
 
 
+
+
 def resnet20(class_num, pretrained=False, path=None, **kwargs):
     """
     Constructs a ResNet-110 model.

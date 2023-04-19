@@ -194,7 +194,7 @@ class ImageNet_truncated(data.Dataset):
         if dataidxs == None:
             self.local_data = self.all_data
         elif type(dataidxs) == int:
-            (begin, end) = self.net_dataidx_map[dataidxs]
+            (begin, end) = self.c [dataidxs]
             self.local_data = self.all_data[begin:end]
         else:
             self.local_data = []

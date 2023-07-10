@@ -1,4 +1,4 @@
-numpy>=1.21,<=1.23
+numpy>=1.21,<=1.25.1
 PyYAML
 h5py
 tqdm
